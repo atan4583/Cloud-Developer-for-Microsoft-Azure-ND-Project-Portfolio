@@ -1,0 +1,206 @@
+data:
+  AzureWebJobsStorage: VXNlRGV2ZWxvcG1lbnRTdG9yYWdlPXRydWU=
+  FUNCTIONS_WORKER_RUNTIME: cHl0aG9u
+  MyDbConnection: bW9uZ29kYjovL3Byb2oyY29zbW9zZGI6WFljSTJFNTBsUHBUVEpkQk5CZEtsRTIxQ2N3MUlTOXR0WnpiNG9rMlBwY1kxTEd4V0swY0JFN1ZDcFd1SzIxbnhPMzR2RDdmQXdQN0pHMFlrVnlQWXc9PUBwcm9qMmNvc21vc2RiLm1vbmdvLmNvc21vcy5henVyZS5jb206MTAyNTUvP3NzbD10cnVlJnJldHJ5d3JpdGVzPWZhbHNlJnJlcGxpY2FTZXQ9Z2xvYmFsZGImbWF4SWRsZVRpbWVNUz0xMjAwMDAmYXBwTmFtZT1AcHJvajJjb3Ntb3NkYkA=
+apiVersion: v1
+kind: Secret
+metadata:
+  name: audreystaks
+  namespace: default
+---
+data:
+  host.master: QXIyUkxESndIL0FSQjRhcDNFR2dyU3RFS2FtYVJjU2VOZDEyQlIvU0FUUW5aeGxkcjdmMnFRPT0=
+  host.function.default: MVo1YkowbFRncmZJRGx5ZnpyTC9sbkcvbzQxUExYY0JPYWdTdTJhNGR6WVg2Mlc4NmFPbVJRPT0=
+  host.systemKey.default: d1c0NXRwbkZ3VElOY2M0Ni9tRFVXUHp3OTJuNGpaR0MvVlI3U0NvYVFUSlNneW5OMTFKVEtRPT0=
+  functions.createadvertisement.default: YXMvdVZ6MmlFMWMzSXlLQXFTYUFVNEtkNDc4ZEh0TERoNUw0M21XOE9UaXdhTmdoS3BheUdBPT0=
+  functions.deleteadvertisement.default: UE9ubFBpYUpxQzZHc053cEFVNzN4RnVJVXIxYlhWcWF4dXl2ODdNQkZnd2dVM1FIcWFBdlVRPT0=
+  functions.getadvertisement.default: VXdOSHhtV2FSYVdaM0s4TW0zZThZOTNHeVVyL1YwbzB0ajRJbGxORjFISUpSYWNzek5JbVpRPT0=
+  functions.getadvertisements.default: U0lkUTRRZ1BmM1J1bXNOSkJJQXB2Wm5vMDU2OE9LOGpCUnRHSTBTZ1VFeFg3YVlqV3J2aFNRPT0=
+  functions.getpost.default: akgxUlRzQUwzaEJaNVl3STR6Z0g1TWNrSUVIOXpLVkw4NDQ0TnhhRzcxYjAva2Q1aGdHY2R3PT0=
+  functions.getposts.default: eXNaVHpDR3ppamJQMWJ5QjZaT0Z0YVQ3VnoyZldPRzVueFNyYUpGQUh2eldtUXZtanA2TWt3PT0=
+  functions.updateadvertisement.default: enRTTGdOR2hGTUhqa3g3MmZYUjU0cXNuYnV1cTU2TGJxbmYzbXpWeWJ5dkcxaDFMY201Mnl3PT0=
+apiVersion: v1
+kind: Secret
+metadata:
+  name: func-keys-kube-secret-audreystaks
+  namespace: default
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: audreystaks-function-keys-identity-svc-act
+  namespace: default
+---
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  - configMaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: functions-keys-manager-role
+  namespace: default
+---
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: functions-keys-manager-role
+subjects:
+- kind: ServiceAccount
+  name: audreystaks-function-keys-identity-svc-act
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: audreystaks-function-keys-identity-svc-act-functions-keys-manager-rolebinding
+  namespace: default
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audreystaks-http
+  namespace: default
+spec:
+  selector:
+    app: audreystaks-http
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audreystaks-http
+  namespace: default
+  labels:
+    app: audreystaks-http
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: audreystaks-http
+  template:
+    metadata:
+      labels:
+        app: audreystaks-http
+    spec:
+      containers:
+      - name: audreystaks-http
+        image: audreystacr.azurecr.io/audreyst-func:v1
+        ports:
+        - containerPort: 80
+        env:
+        - name: AzureFunctionsJobHost__functions__0
+          value: createAdvertisement
+        - name: AzureFunctionsJobHost__functions__1
+          value: deleteAdvertisement
+        - name: AzureFunctionsJobHost__functions__2
+          value: getAdvertisement
+        - name: AzureFunctionsJobHost__functions__3
+          value: getAdvertisements
+        - name: AzureFunctionsJobHost__functions__4
+          value: getPost
+        - name: AzureFunctionsJobHost__functions__5
+          value: getPosts
+        - name: AzureFunctionsJobHost__functions__6
+          value: updateAdvertisement
+        - name: AzureWebJobsSecretStorageType
+          value: kubernetes
+        - name: AzureWebJobsKubernetesSecretName
+          value: secrets/func-keys-kube-secret-audreystaks
+        envFrom:
+        - secretRef:
+            name: audreystaks
+        readinessProbe:
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 240
+          httpGet:
+            path: /
+            port: 80
+            scheme: HTTP
+        startupProbe:
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 240
+          httpGet:
+            path: /
+            port: 80
+            scheme: HTTP
+      serviceAccountName: audreystaks-function-keys-identity-svc-act
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audreystaks
+  namespace: default
+  labels:
+    app: audreystaks
+spec:
+  selector:
+    matchLabels:
+      app: audreystaks
+  template:
+    metadata:
+      labels:
+        app: audreystaks
+    spec:
+      containers:
+      - name: audreystaks
+        image: audreystacr.azurecr.io/audreyst-func:v1
+        env:
+        - name: AzureFunctionsJobHost__functions__0
+          value: eventHubTrigger
+        envFrom:
+        - secretRef:
+            name: audreystaks
+        readinessProbe:
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 240
+          httpGet:
+            path: /
+            port: 80
+            scheme: HTTP
+        startupProbe:
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 240
+          httpGet:
+            path: /
+            port: 80
+            scheme: HTTP
+      serviceAccountName: audreystaks-function-keys-identity-svc-act
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: audreystaks
+  namespace: default
+  labels: {}
+spec:
+  scaleTargetRef:
+    name: audreystaks
+  triggers:
+  - type: eventgridtrigger
+    metadata:
+      direction: in
+      eventHubName: proj2eh
+      connection: Endpoint=sb://proj2nmspace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=s5ftz6MFp9p6rVqLsPMLxLnyJ41pIwOrCtipUdiqwkU=;EntityPath=proj2eh
+---
+
